@@ -56,7 +56,7 @@ void RfidTask::scanCard(String& uid){
 
         // Prima: whitelist hardcoded
         static const char* whitelist[] = {
-            "04c93a42461d94" // scheda keba giorgio
+            // Example UID, replace with actual allowed UIDs
         };
 
         for (const char* allowed : whitelist) {
