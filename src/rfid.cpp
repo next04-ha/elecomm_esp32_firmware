@@ -52,39 +52,56 @@ void RfidTask::scanCard(String& uid){
     } else if (onCardScanned && (*onCardScanned) && (*onCardScanned)(uid)){
         //OCPP will process the card
     }else{
-        // Check if tag is stored locally
-        char storedTags[rfid_storage.length() + 1];
-        rfid_storage.toCharArray(storedTags, rfid_storage.length()+1);
-        char* storedTag = strtok(storedTags, ",");
         bool foundCard = false;
-        while(storedTag)
-        {
-            String storedTagStr = storedTag;
-            storedTagStr.replace(" ", "");
-            if(storedTagStr.equals(uid)){
+
+        // Prima: whitelist hardcoded
+        static const char* whitelist[] = {
+            "04c93a42461d94" // scheda keba giorgio
+        };
+
+        for (const char* allowed : whitelist) {
+            if (uid.equalsIgnoreCase(allowed)) {
                 foundCard = true;
-                if (!isAuthenticated()){
-                    setAuthentication(uid);
-                    lcd.display("Activating", 0, 0, 0, LCD_CLEAR_LINE | LCD_DISPLAY_NOW);
-                    lcd.display("Tag Allowed", 0, 1, 5 * 1000, LCD_CLEAR_LINE);
-                    DBUGLN(F("[rfid] found card"));
-                } else if (uid == authenticatedTag) {
-                    resetAuthentication();
-                    lcd.display("Disabling", 0, 0, 0, LCD_CLEAR_LINE | LCD_DISPLAY_NOW);
-                    lcd.display("Session Ended", 0, 1, 5 * 1000, LCD_CLEAR_LINE);
-                    DBUGLN(F("[rfid] finished by presenting card"));
-                } else {
-                    lcd.display("Wrong Tag", 0, 1, 5 * 1000, LCD_CLEAR_LINE | LCD_DISPLAY_NOW);
-                    DBUGLN(F("[rfid] card does not match"));
-                }
                 break;
             }
-            storedTag = strtok(NULL, ",");
         }
 
+        // Poi: verifica nei tag salvati (solo se non già trovato)
         if (!foundCard) {
-            lcd.display("Unrecognized Tag", 0, 1, 5 * 1000, LCD_CLEAR_LINE | LCD_DISPLAY_NOW);
-            DBUGLN(F("[rfid] did not recognize card"));
+            char storedTags[rfid_storage.length() + 1];
+            rfid_storage.toCharArray(storedTags, rfid_storage.length() + 1);
+            char* storedTag = strtok(storedTags, ",");
+
+            while (storedTag) {
+                String storedTagStr = storedTag;
+                storedTagStr.replace(" ", "");
+                if (storedTagStr.equalsIgnoreCase(uid)) {
+                    foundCard = true;
+                    break;
+                }
+                storedTag = strtok(NULL, ",");
+            }
+        }
+
+        // Gestione finale
+        if (foundCard) {
+            if (!isAuthenticated()) {
+                setAuthentication(uid);
+                lcd.display("Attivazione", 0, 0, 0, LCD_CLEAR_LINE | LCD_DISPLAY_NOW);
+                lcd.display("Tessera OK", 0, 1, 5 * 1000, LCD_CLEAR_LINE);
+                DBUGLN(F("[rfid] card autorizzata"));
+            } else if (uid == authenticatedTag) {
+                resetAuthentication();
+                lcd.display("Disattivazione", 0, 0, 0, LCD_CLEAR_LINE | LCD_DISPLAY_NOW);
+                lcd.display("Sessione terminata", 0, 1, 5 * 1000, LCD_CLEAR_LINE);
+                DBUGLN(F("[rfid] sessione chiusa"));
+            } else {
+                lcd.display("Tag errato", 0, 1, 5 * 1000, LCD_CLEAR_LINE | LCD_DISPLAY_NOW);
+                DBUGLN(F("[rfid] tag non corrisponde a quello attivo"));
+            }
+        } else {
+            lcd.display("Tag non valido", 0, 1, 5 * 1000, LCD_CLEAR_LINE | LCD_DISPLAY_NOW);
+            DBUGLN(F("[rfid] tessera non riconosciuta"));
         }
     }
 }

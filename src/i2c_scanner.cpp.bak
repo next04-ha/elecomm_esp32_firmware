@@ -1,0 +1,41 @@
+#include <Arduino.h>
+#include <Wire.h>
+
+void setup() {
+  Serial.begin(115200);
+  Serial.println("I2C Scanner print iniziale");
+  Wire.begin(22, 21);  // usa SDA/SCL predefiniti oppure specifica i pin: Wire.begin(22, 21);
+  delay(1000);
+  Serial.println("Scanner I2C in esecuzione...");
+}
+
+void loop() {
+  byte error, address;
+  int count = 0;
+
+  Serial.println("Cerco dispositivi I2C...");
+
+  for(address = 1; address < 127; address++) {
+    Wire.beginTransmission(address);
+    error = Wire.endTransmission();
+
+    if (error == 0) {
+      Serial.print("Dispositivo I2C trovato all'indirizzo 0x");
+      if (address < 16) Serial.print("0");
+      Serial.print(address, HEX);
+      Serial.println(" !");
+      count++;
+    } else if (error == 4) {
+      Serial.print("Errore sconosciuto all'indirizzo 0x");
+      if (address < 16) Serial.print("0");
+      Serial.println(address, HEX);
+    }
+  }
+
+  if (count == 0)
+    Serial.println("Nessun dispositivo I2C trovato\n");
+  else
+    Serial.println("Scansione completata\n");
+
+  delay(5000); // Aspetta 5 secondi prima di una nuova scansione
+}
