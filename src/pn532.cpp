@@ -25,6 +25,8 @@
 #define  SCAN_DELAY            1000
 #define  ACK_DELAY              30
 
+#define BUZZER_PIN 33
+
 #define MAXIMUM_UNRESPONSIVE_TIME  60000UL //after this period the pn532 is considered offline
 #define AUTO_REFRESH_CONNECTION         30 //after this number of polls, the connection to the PN532 will be refreshed
 
@@ -50,6 +52,7 @@ PN532::PN532() : MicroTasks::Task() {
 
 void PN532::begin() {
     Wire.begin(I2C_SDA, I2C_SCL);
+    pinMode(BUZZER_PIN, OUTPUT);
     MicroTask.startTask(this);
 }
 
@@ -287,6 +290,9 @@ void PN532::read() {
         (void) card_type;
 
         onCardDetected(uid);
+        digitalWrite(BUZZER_PIN, HIGH);
+        delay(100);
+        digitalWrite(BUZZER_PIN, LOW);
         hasContact = true;
 
     } else {
