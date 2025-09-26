@@ -760,5 +760,3 @@ void LedManagerTask::setBrightness(uint8_t brightness)
   MicroTask.wakeTask(this);
 }
 
-
-LedManagerTask ledManager;

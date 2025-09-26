@@ -80,6 +80,7 @@ class LedManagerTask : public MicroTasks::Task
     void setBrightness(uint8_t brightness);
 };
 
+
 extern LedManagerTask ledManager;
 
 #endif //  LED_MANAGER_TASK_H

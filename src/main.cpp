@@ -58,6 +58,8 @@
 #endif
 
 #include "LedManagerTask.h"
+#include "BuzzerManagerTask.h"
+
 #include "event_log.h"
 #include "evse_man.h"
 #include "scheduler.h"
@@ -73,6 +75,7 @@ Scheduler scheduler(evse);
 ManualOverride manual(evse);
 DivertTask divert(evse);
 
+LedManagerTask ledManager;
 NetManagerTask net(lcd, ledManager, timeManager);
 
 RapiSender &rapiSender = evse.getSender();
@@ -93,7 +96,6 @@ String buildenv = ESCAPEQUOTE(BUILD_ENV_NAME);
 String serial;
 
 OcppTask ocpp = OcppTask();
-
 
 static void hardware_setup();
 static void handle_serial();
@@ -164,6 +166,11 @@ void setup()
   certs.begin();
   DBUGF("After net_setup: %d", ESPAL.getFreeHeap());
 
+  // Initialize the buzzer task and register it with MicroTasks scheduler
+  buzzer.begin();
+  MicroTask.startTask(buzzer); // Register buzzer task to be automatically called in loop()
+  DBUGF("After buzzer.begin and MicroTask.addTask: %d", ESPAL.getFreeHeap());
+
   // Initialise Mongoose networking library
   Mongoose.begin();
   Mongoose.setRootCaCallback([]() -> const char *{
@@ -193,6 +200,9 @@ void setup()
   lcd.display(F("OpenEVSE WiFI"), 0, 0, 0, LCD_CLEAR_LINE);
   lcd.display(currentfirmware, 0, 1, 5 * 1000, LCD_CLEAR_LINE);
 
+  // Play startup buzzer sequence
+  buzzer.suonaSequenza(BuzzerManagerTask::Suoni::avvio);
+
   start_mem = last_mem = ESPAL.getFreeHeap();
 } // end setup
 
@@ -214,6 +224,7 @@ loop() {
   rapiSender.loop();
 
   Profile_Start(MicroTask);
+  // MicroTasks library automatically calls all registered tasks including buzzer
   MicroTask.update();
   Profile_End(MicroTask, 10);
 

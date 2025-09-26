@@ -17,6 +17,8 @@
 #include "openevse.h"
 #include "event.h"
 
+#include "BuzzerManagerTask.h"
+
 #define AUTHENTICATION_TIMEOUT  30 * 1000UL
 #define RFID_ADD_WAITINGPERIOD  60 * 1000UL
 
@@ -90,18 +92,22 @@ void RfidTask::scanCard(String& uid){
                 lcd.display("Attivazione", 0, 0, 0, LCD_CLEAR_LINE | LCD_DISPLAY_NOW);
                 lcd.display("Tessera OK", 0, 1, 5 * 1000, LCD_CLEAR_LINE);
                 DBUGLN(F("[rfid] card autorizzata"));
+                buzzer.suonaSequenza(BuzzerManagerTask::Suoni::carta_accettata);
             } else if (uid == authenticatedTag) {
                 resetAuthentication();
                 lcd.display("Disattivazione", 0, 0, 0, LCD_CLEAR_LINE | LCD_DISPLAY_NOW);
                 lcd.display("Sessione terminata", 0, 1, 5 * 1000, LCD_CLEAR_LINE);
                 DBUGLN(F("[rfid] sessione chiusa"));
+                buzzer.suonaSequenza(BuzzerManagerTask::Suoni::carta_accettata);
             } else {
                 lcd.display("Tag errato", 0, 1, 5 * 1000, LCD_CLEAR_LINE | LCD_DISPLAY_NOW);
                 DBUGLN(F("[rfid] tag non corrisponde a quello attivo"));
+                buzzer.suonaSequenza(BuzzerManagerTask::Suoni::carta_nonRiconosciuta);
             }
         } else {
             lcd.display("Tag non valido", 0, 1, 5 * 1000, LCD_CLEAR_LINE | LCD_DISPLAY_NOW);
             DBUGLN(F("[rfid] tessera non riconosciuta"));
+            buzzer.suonaSequenza(BuzzerManagerTask::Suoni::carta_nonRiconosciuta);
         }
     }
 }
